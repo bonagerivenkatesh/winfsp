@@ -1072,6 +1072,21 @@ namespace Fsp
                 return ExceptionHandler(FileSystem, ex);
             }
         }
+        public virtual void FspFileSystemSendResponse(
+            IntPtr FileSystemPtr,
+            FSP_FSCTL_TRANSACT_RSP Response)
+        {
+            if (IntPtr.Zero != FileSystemPtr)
+            {
+                Api.FspFileSystemSendResponse(
+                    FileSystemPtr,
+                    Response);
+            }
+        }
+        public virtual FSP_FILE_SYSTEM_OPERATION_CONTEXT FspFileSystemGetOperationContext()
+        {
+            return Api.FspFileSystemGetOperationContext();
+        }
 
         static FileSystemHost()
         {

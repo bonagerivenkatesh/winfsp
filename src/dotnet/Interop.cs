@@ -195,6 +195,50 @@ namespace Fsp.Interop
         /// </summary>
         public UInt32 HardLinks;
     }
+	
+    [StructLayout(LayoutKind.Sequential)]
+    public struct FSP_FSCTL_TRANSACT_RSP
+    {
+        public UInt16 Version;
+
+         public UInt16 Size;
+
+         public UInt32 Kind;
+
+         public UInt64 Hint;
+
+         public IoStatus IoStatus;
+
+     }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct IoStatus
+    {
+        public UInt32 Information;
+        public UInt32 Status;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct FSP_FSCTL_TRANSACT_REQ
+    {
+        public UInt16 Version;
+
+         public UInt16 Size;
+
+         public UInt32 Kind;
+
+         public UInt64 Hint;
+
+         public IoStatus IoStatus;
+
+     }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct FSP_FILE_SYSTEM_OPERATION_CONTEXT
+    {
+        public FSP_FSCTL_TRANSACT_REQ Request;
+        public FSP_FSCTL_TRANSACT_RSP Response;
+    }
 
     [StructLayout(LayoutKind.Sequential)]
     internal struct OpenFileInfo
@@ -636,6 +680,12 @@ namespace Fsp.Interop
             internal delegate void FspDeleteSecurityDescriptor(
                 IntPtr SecurityDescriptor,
                 IntPtr CreateFunc);
+            [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+            internal delegate void FspFileSystemSendResponse(
+                IntPtr FileSystem,
+                FSP_FSCTL_TRANSACT_RSP Response);
+            [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+            internal delegate FSP_FILE_SYSTEM_OPERATION_CONTEXT FspFileSystemGetOperationContext();
 
             /* Service */
             [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
@@ -758,6 +808,8 @@ namespace Fsp.Interop
         internal static Proto.FspWin32FromNtStatus FspWin32FromNtStatus;
         internal static Proto.FspDebugLog FspDebugLog;
         internal static Proto.FspDebugLogSetHandle FspDebugLogSetHandle;
+        internal static Proto.FspFileSystemSendResponse FspFileSystemSendResponse;
+        internal static Proto.FspFileSystemGetOperationContext FspFileSystemGetOperationContext;
 
         internal static unsafe Int32 FspFileSystemSetMountPointEx(
             IntPtr FileSystem,
@@ -1095,6 +1147,8 @@ namespace Fsp.Interop
             FspWin32FromNtStatus = GetEntryPoint<Proto.FspWin32FromNtStatus>(Module);
             FspDebugLog = GetEntryPoint<Proto.FspDebugLog>(Module);
             FspDebugLogSetHandle = GetEntryPoint<Proto.FspDebugLogSetHandle>(Module);
+            FspFileSystemSendResponse = GetEntryPoint<Proto.FspFileSystemSendResponse>(Module);
+            FspFileSystemGetOperationContext = GetEntryPoint<Proto.FspFileSystemGetOperationContext>(Module);
         }
         private static void CheckVersion()
         {

@@ -25,8 +25,10 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Security.AccessControl;
 using System.Threading;
+using System.Threading.Tasks;
 
 using Fsp;
+using Fsp.Interop;
 using VolumeInfo = Fsp.Interop.VolumeInfo;
 using FileInfo = Fsp.Interop.FileInfo;
 
@@ -218,6 +220,7 @@ namespace memfs
 
     class Memfs : FileSystemBase
     {
+        private FileSystemHost Host;
         public const UInt16 MEMFS_SECTOR_SIZE = 512;
         public const UInt16 MEMFS_SECTORS_PER_ALLOCATION_UNIT = 1;
 
@@ -245,7 +248,7 @@ namespace memfs
 
         public override Int32 Init(Object Host0)
         {
-            FileSystemHost Host = (FileSystemHost)Host0;
+            Host = (FileSystemHost)Host0;
             Host.SectorSize = Memfs.MEMFS_SECTOR_SIZE;
             Host.SectorsPerAllocationUnit = Memfs.MEMFS_SECTORS_PER_ALLOCATION_UNIT;
             Host.VolumeCreationTime = (UInt64)DateTime.Now.ToFileTimeUtc();
@@ -520,10 +523,34 @@ namespace memfs
             if (EndOffset > FileNode.FileInfo.FileSize)
                 EndOffset = FileNode.FileInfo.FileSize;
 
-            BytesTransferred = (UInt32)(EndOffset - Offset);
+            var hint = Host.FspFileSystemGetOperationContext().Request.Hint;
+            Task.Run(() => SlowioReadThread(FileNode0, FileDesc, Buffer, Offset, EndOffset, hint)).ConfigureAwait(false);
+
+            BytesTransferred = 0;
+            return STATUS_PENDING;
+        }
+
+        void SlowioReadThread(
+            Object FileNode0,
+            Object FileDesc,
+            IntPtr Buffer,
+            UInt64 Offset,
+            UInt64 EndOffset,
+            UInt64 RequestHint)
+        {
+
+            Thread.Sleep(TimeSpan.FromSeconds(5));
+            UInt32 BytesTransferred = (UInt32)(EndOffset - Offset);
+            FileNode FileNode = (FileNode)FileNode0;
             Marshal.Copy(FileNode.FileData, (int)Offset, Buffer, (int)BytesTransferred);
 
-            return STATUS_SUCCESS;
+            var response = new FSP_FSCTL_TRANSACT_RSP();
+            response.Hint = RequestHint;
+            response.IoStatus.Information = BytesTransferred;
+            response.IoStatus.Status = STATUS_SUCCESS;
+            GCHandle handle1 = GCHandle.Alloc(this);
+            IntPtr parameter = (IntPtr)handle1;
+            Host.FspFileSystemSendResponse(parameter, response);
         }
 
         public override Int32 Write(
