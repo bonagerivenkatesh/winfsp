@@ -684,6 +684,8 @@ FSP_API VOID FspFileSystemSendResponse(FSP_FILE_SYSTEM *FileSystem,
 
 FSP_API FSP_FILE_SYSTEM_OPERATION_CONTEXT *FspFileSystemGetOperationContext(VOID)
 {
+	DEBUGLOG("FspFileSystemGetOperationContext() %d", 1);
+	FspDebugLog("FspFileSystemGetOperationContext() %d", 1);
     return (FSP_FILE_SYSTEM_OPERATION_CONTEXT *)TlsGetValue(FspFileSystemTlsKey);
 }
 

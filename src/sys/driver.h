@@ -83,13 +83,13 @@ VOID FspDebugLogIrp(const char *func, PIRP Irp, NTSTATUS Result);
 /* DbgPrint */
 #if DBG
 #define DbgPrint(...)                   \
-    ((void)((fsp_debug & fsp_debug_dp) ? DbgPrint(__VA_ARGS__) : 0))
+    ((void)((fsp_debug & fsp_debug_dp) ? DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL,__VA_ARGS__) : 0))
 #endif
 
 /* DEBUGLOG */
 #if DBG
 #define DEBUGLOG(fmt, ...)              \
-    DbgPrint("[%d] " DRIVER_NAME "!" __FUNCTION__ ": " fmt "\n", KeGetCurrentIrql(), __VA_ARGS__)
+    DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "[%d] " DRIVER_NAME "!" __FUNCTION__ ": " fmt "\n", KeGetCurrentIrql(), __VA_ARGS__)
 #define DEBUGLOGIRP(Irp, Result)        FspDebugLogIrp(__FUNCTION__, Irp, Result)
 #else
 #define DEBUGLOG(fmt, ...)              ((void)0)

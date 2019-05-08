@@ -1085,7 +1085,7 @@ namespace Fsp
         /// </summary>
         public static Int32 NtStatusFromWin32(UInt32 Error)
         {
-            return Api.FspNtStatusFromWin32(Error);
+            return Api.FspNtStatusFromWin32(Error, "FileSystemBase.cs", 1088);
         }
         /// <summary>
         /// Converts a Windows kernel status code to a Win32 error code.

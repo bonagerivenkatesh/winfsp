@@ -43,6 +43,9 @@
 
 #include <winfsp/fsctl.h>
 
+#define FspNtStatusFromWin32(Error) \
+        FspNtStatusFromWin32Impl(Error, __FILE__, __LINE__)
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -1780,7 +1783,7 @@ FSP_API VOID FspServiceLogV(ULONG Type, PWSTR Format, va_list ap);
 /*
  * Utility
  */
-FSP_API NTSTATUS FspNtStatusFromWin32(DWORD Error);
+FSP_API NTSTATUS FspNtStatusFromWin32Impl(DWORD Error, const char* file, int line);
 FSP_API DWORD FspWin32FromNtStatus(NTSTATUS Status);
 FSP_API VOID FspEventLog(ULONG Type, PWSTR Format, ...);
 FSP_API VOID FspEventLogV(ULONG Type, PWSTR Format, va_list ap);

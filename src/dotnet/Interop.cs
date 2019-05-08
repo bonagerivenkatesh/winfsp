@@ -729,8 +729,10 @@ namespace Fsp.Interop
             internal delegate Int32 FspVersion(
                 out UInt32 PVersion);
             [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-            internal delegate Int32 FspNtStatusFromWin32(
-                UInt32 Error);
+            internal delegate Int32 FspNtStatusFromWin32Impl(
+                UInt32 Error,
+                [MarshalAs(UnmanagedType.LPStr)] String File,
+                Int32 Line);
             [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
             internal delegate UInt32 FspWin32FromNtStatus(
                 Int32 Status);
@@ -804,7 +806,7 @@ namespace Fsp.Interop
         internal static Proto.FspServiceStop FspServiceStop;
         internal static Proto.FspServiceLog FspServiceLog;
         internal static Proto.FspVersion FspVersion;
-        internal static Proto.FspNtStatusFromWin32 FspNtStatusFromWin32;
+        internal static Proto.FspNtStatusFromWin32Impl FspNtStatusFromWin32;
         internal static Proto.FspWin32FromNtStatus FspWin32FromNtStatus;
         internal static Proto.FspDebugLog FspDebugLog;
         internal static Proto.FspDebugLogSetHandle FspDebugLogSetHandle;
@@ -1059,7 +1061,7 @@ namespace Fsp.Interop
                     (UInt32)FileAttributes.Normal,
                     IntPtr.Zero);
             if ((IntPtr)(-1) == Handle)
-                return FspNtStatusFromWin32((UInt32)Marshal.GetLastWin32Error());
+                return FspNtStatusFromWin32((UInt32)Marshal.GetLastWin32Error(), "Interop.cs", 1014);
             Api.FspDebugLogSetHandle(Handle);
             return 0/*STATUS_SUCCESS*/;
         }
@@ -1143,7 +1145,7 @@ namespace Fsp.Interop
             FspServiceStop = GetEntryPoint<Proto.FspServiceStop>(Module);
             FspServiceLog = GetEntryPoint<Proto.FspServiceLog>(Module);
             FspVersion = GetEntryPoint<Proto.FspVersion>(Module);
-            FspNtStatusFromWin32 = GetEntryPoint<Proto.FspNtStatusFromWin32>(Module);
+            FspNtStatusFromWin32 = GetEntryPoint<Proto.FspNtStatusFromWin32Impl>(Module);
             FspWin32FromNtStatus = GetEntryPoint<Proto.FspWin32FromNtStatus>(Module);
             FspDebugLog = GetEntryPoint<Proto.FspDebugLog>(Module);
             FspDebugLogSetHandle = GetEntryPoint<Proto.FspDebugLogSetHandle>(Module);

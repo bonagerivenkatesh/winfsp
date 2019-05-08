@@ -36,8 +36,13 @@ static BOOL WINAPI FspNtStatusInitialize(
     return TRUE;
 }
 
-FSP_API NTSTATUS FspNtStatusFromWin32(DWORD Error)
+FSP_API NTSTATUS FspNtStatusFromWin32Impl(DWORD Error, const char* file, int line)
 {
+	if (Error != 0 && file != NULL)
+	{
+		FspDebugLog("Error(%d), File(%s), Line(%d) \n", Error, file, line);
+	}
+
     switch (Error)
     {
     #include "ntstatus.i"
