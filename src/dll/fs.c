@@ -42,7 +42,9 @@ static BOOL WINAPI FspFileSystemInitialize(
 {
     HANDLE Handle;
 
+	FspDebugLog("\nFspFileSystemInitialize() %d \n", 1);
     FspFileSystemTlsKey = TlsAlloc();
+	FspDebugLog("\nFspFileSystemInitialize() %d \n", 2);
 
     Handle = GetModuleHandleW(L"ntdll.dll");
     if (0 != Handle)
@@ -71,9 +73,14 @@ VOID FspFileSystemFinalize(BOOLEAN Dynamic)
      * We must free our TLS key (if any). We only do so if the library
      * is being explicitly unloaded (rather than the process exiting).
      */
-
-    if (Dynamic && TLS_OUT_OF_INDEXES != FspFileSystemTlsKey)
-        TlsFree(FspFileSystemTlsKey);
+	FspDebugLog("\nFspFileSystemFinalize() %d \n", 1);
+	if (Dynamic && TLS_OUT_OF_INDEXES != FspFileSystemTlsKey)
+	{
+		TlsFree(FspFileSystemTlsKey);
+		FspDebugLog("\nFspFileSystemFinalize() %d \n", 2);
+	}
+	FspDebugLog("\nFspFileSystemFinalize() %d \n", 3);
+        
 }
 
 FSP_API NTSTATUS FspFileSystemPreflight(PWSTR DevicePath,
@@ -128,6 +135,8 @@ FSP_API NTSTATUS FspFileSystemCreate(PWSTR DevicePath,
 
     *PFileSystem = 0;
 
+	FspDebugLog("\nFspFileSystemCreate() %d \n", 1);
+
     if (VolumeParams->UmFileContextIsUserContext2 &&
         VolumeParams->UmFileContextIsFullContext)
         return STATUS_INVALID_PARAMETER;
@@ -136,8 +145,12 @@ FSP_API NTSTATUS FspFileSystemCreate(PWSTR DevicePath,
         Interface = &FspFileSystemNullInterface;
 
     InitOnceExecuteOnce(&FspFileSystemInitOnce, FspFileSystemInitialize, 0, 0);
-    if (TLS_OUT_OF_INDEXES == FspFileSystemTlsKey)
-        return STATUS_INSUFFICIENT_RESOURCES;
+	if (TLS_OUT_OF_INDEXES == FspFileSystemTlsKey)
+	{
+		FspDebugLog("\nFspFileSystemCreate() %d \n", 2);
+		return STATUS_INSUFFICIENT_RESOURCES;
+	}
+	FspDebugLog("\nFspFileSystemCreate() %d \n", 3);
 
     FileSystem = MemAlloc(sizeof *FileSystem);
     if (0 == FileSystem)
@@ -517,28 +530,36 @@ static DWORD WINAPI FspFileSystemDispatcherThread(PVOID FileSystem0)
     FSP_FILE_SYSTEM_OPERATION_CONTEXT OperationContext;
     HANDLE DispatcherThread = 0;
 
+	FspDebugLog("\nFspFileSystemDispatcherThread() %d \n", 1);
+
     Request = MemAlloc(FSP_FSCTL_TRANSACT_BUFFER_SIZEMIN);
     Response = MemAlloc(FSP_FSCTL_TRANSACT_RSP_SIZEMAX);
     if (0 == Request || 0 == Response)
     {
+		FspDebugLog("\nFspFileSystemDispatcherThread() %d \n", 2);
         Result = STATUS_INSUFFICIENT_RESOURCES;
         goto exit;
     }
 
     if (1 < FileSystem->DispatcherThreadCount)
     {
+		FspDebugLog("\nFspFileSystemDispatcherThread() %d \n", 3);
         FileSystem->DispatcherThreadCount--;
         DispatcherThread = CreateThread(0, 0, FspFileSystemDispatcherThread, FileSystem, 0, 0);
         if (0 == DispatcherThread)
         {
+			FspDebugLog("\nFspFileSystemDispatcherThread() %d \n", 4);
             Result = FspNtStatusFromWin32(GetLastError());
             goto exit;
         }
     }
 
+	FspDebugLog("\nFspFileSystemDispatcherThread() %d \n", 5);
     OperationContext.Request = Request;
     OperationContext.Response = Response;
+	FspDebugLog("\nFspFileSystemDispatcherThread() %d \n", 6);
     TlsSetValue(FspFileSystemTlsKey, &OperationContext);
+	FspDebugLog("\nFspFileSystemDispatcherThread() %d \n", 7);
 
     memset(Response, 0, sizeof *Response);
     for (;;)
@@ -603,6 +624,7 @@ static DWORD WINAPI FspFileSystemDispatcherThread(PVOID FileSystem0)
     }
 
 exit:
+	FspDebugLog("\nFspFileSystemDispatcherThread() exit %d \n", 8);
     TlsSetValue(FspFileSystemTlsKey, 0);
     MemFree(Response);
     MemFree(Request);
@@ -672,6 +694,8 @@ FSP_API VOID FspFileSystemSendResponse(FSP_FILE_SYSTEM *FileSystem,
             FspDebugLogResponse(Response);
     }
 
+	FspDebugLog("\nFspFileSystemSendResponse() Kind %d \n", Response->Kind);
+
     Result = FspFsctlTransact(FileSystem->VolumeHandle,
         Response, Response->Size, 0, 0, FALSE);
     if (!NT_SUCCESS(Result))
@@ -684,8 +708,10 @@ FSP_API VOID FspFileSystemSendResponse(FSP_FILE_SYSTEM *FileSystem,
 
 FSP_API FSP_FILE_SYSTEM_OPERATION_CONTEXT *FspFileSystemGetOperationContext(VOID)
 {
-	DEBUGLOG("FspFileSystemGetOperationContext() %d", 1);
-	FspDebugLog("FspFileSystemGetOperationContext() %d", 1);
+	FspDebugLog("\nFspFileSystemGetOperationContext() %d \n", 1);
+	FspDebugLog("\nFspFileSystemGetOperationContext() FspFileSystemTlsKey %d \n", FspFileSystemTlsKey);
+	FSP_FILE_SYSTEM_OPERATION_CONTEXT* temp = TlsGetValue(FspFileSystemTlsKey);
+	FspDebugLog("\nFspFileSystemGetOperationContext() Hint %lu \n", temp->Request->Hint);
     return (FSP_FILE_SYSTEM_OPERATION_CONTEXT *)TlsGetValue(FspFileSystemTlsKey);
 }
 

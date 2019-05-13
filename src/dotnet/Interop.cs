@@ -230,8 +230,7 @@ namespace Fsp.Interop
          public UInt64 Hint;
 
          public IoStatus IoStatus;
-
-     }
+    }
 
     [StructLayout(LayoutKind.Sequential)]
     public struct FSP_FILE_SYSTEM_OPERATION_CONTEXT
@@ -683,9 +682,9 @@ namespace Fsp.Interop
             [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
             internal delegate void FspFileSystemSendResponse(
                 IntPtr FileSystem,
-                FSP_FSCTL_TRANSACT_RSP Response);
+                ref FSP_FSCTL_TRANSACT_RSP Response);
             [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-            internal delegate FSP_FILE_SYSTEM_OPERATION_CONTEXT FspFileSystemGetOperationContext();
+            internal unsafe delegate FSP_FILE_SYSTEM_OPERATION_CONTEXT* FspFileSystemGetOperationContext();
 
             /* Service */
             [UnmanagedFunctionPointer(CallingConvention.Cdecl)]

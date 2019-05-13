@@ -524,10 +524,25 @@ namespace memfs
                 EndOffset = FileNode.FileInfo.FileSize;
 
             var hint = Host.FspFileSystemGetOperationContext().Request.Hint;
-            Task.Run(() => SlowioReadThread(FileNode0, FileDesc, Buffer, Offset, EndOffset, hint)).ConfigureAwait(false);
+
+            try
+            {
+                Task.Run(() => SlowioReadThread(FileNode0, FileDesc, Buffer, Offset, EndOffset, hint)).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+
+            //SlowioReadThread(FileNode0, FileDesc, Buffer, Offset, EndOffset, hint);
 
             BytesTransferred = 0;
             return STATUS_PENDING;
+
+            /*BytesTransferred = (UInt32)(EndOffset - Offset);
+            Marshal.Copy(FileNode.FileData, (int)Offset, Buffer, (int)BytesTransferred);
+            return STATUS_SUCCESS;*/
         }
 
         void SlowioReadThread(
@@ -544,13 +559,23 @@ namespace memfs
             FileNode FileNode = (FileNode)FileNode0;
             Marshal.Copy(FileNode.FileData, (int)Offset, Buffer, (int)BytesTransferred);
 
-            var response = new FSP_FSCTL_TRANSACT_RSP();
-            response.Hint = RequestHint;
-            response.IoStatus.Information = BytesTransferred;
-            response.IoStatus.Status = STATUS_SUCCESS;
-            GCHandle handle1 = GCHandle.Alloc(this);
-            IntPtr parameter = (IntPtr)handle1;
-            Host.FspFileSystemSendResponse(parameter, response);
+            var response = new FSP_FSCTL_TRANSACT_RSP
+            {
+                Hint = RequestHint,
+                IoStatus = {Information = BytesTransferred, Status = STATUS_SUCCESS},
+                Kind = 5,
+                Size = (ushort) Marshal.SizeOf<FSP_FSCTL_TRANSACT_RSP>()
+            };
+
+            try
+            {
+                Host.FspFileSystemSendResponse(ref response);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
         }
 
         public override Int32 Write(

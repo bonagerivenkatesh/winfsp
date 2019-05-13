@@ -117,21 +117,41 @@ FSP_API NTSTATUS FspFsctlTransact(HANDLE VolumeHandle,
 
     if (0 != PRequestBufSize)
     {
+		FspDebugLog("\nFspFsctlTransact() %d \n", 1);
         Bytes = (DWORD)*PRequestBufSize;
         *PRequestBufSize = 0;
     }
+
+	FspDebugLog("\nFspFsctlTransact() %d \n", 2);
+
+	if (INVALID_HANDLE_VALUE == VolumeHandle)
+	{
+		FspDebugLog("\nFspFsctlTransact() Invalid Volumehandle \n");
+	}
 
     if (!DeviceIoControl(VolumeHandle,
         Batch ? FSP_FSCTL_TRANSACT_BATCH : FSP_FSCTL_TRANSACT,
         ResponseBuf, (DWORD)ResponseBufSize, RequestBuf, Bytes,
         &Bytes, 0))
     {
+		FspDebugLog("\nFspFsctlTransact() ResponseBufSize %d \n", (DWORD)ResponseBufSize);
+
+		FspDebugLog("\nFspFsctlTransact() Bytes %d \n", Bytes);
+		FspDebugLog("\nFspFsctlTransact() Size %d \n", ResponseBufSize);
+
         Result = FspNtStatusFromWin32(GetLastError());
         goto exit;
     }
 
-    if (0 != PRequestBufSize)
-        *PRequestBufSize = Bytes;
+	FspDebugLog("\nFspFsctlTransact() %d \n", 4);
+
+	if (0 != PRequestBufSize)
+	{
+		*PRequestBufSize = Bytes;
+		FspDebugLog("\nFspFsctlTransact() %d \n", 5);
+	}
+
+	FspDebugLog("\nFspFsctlTransact() %d \n", 6);
 
 exit:
     return Result;

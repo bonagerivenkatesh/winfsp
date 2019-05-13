@@ -1072,20 +1072,37 @@ namespace Fsp
                 return ExceptionHandler(FileSystem, ex);
             }
         }
-        public virtual void FspFileSystemSendResponse(
-            IntPtr FileSystemPtr,
-            FSP_FSCTL_TRANSACT_RSP Response)
+        public virtual void FspFileSystemSendResponse(ref FSP_FSCTL_TRANSACT_RSP Response)
         {
-            if (IntPtr.Zero != FileSystemPtr)
+            if (IntPtr.Zero != _FileSystemPtr)
             {
                 Api.FspFileSystemSendResponse(
-                    FileSystemPtr,
-                    Response);
+                    _FileSystemPtr,
+                    ref Response);
             }
         }
-        public virtual FSP_FILE_SYSTEM_OPERATION_CONTEXT FspFileSystemGetOperationContext()
+        public virtual unsafe FSP_FILE_SYSTEM_OPERATION_CONTEXT FspFileSystemGetOperationContext()
         {
-            return Api.FspFileSystemGetOperationContext();
+            FSP_FILE_SYSTEM_OPERATION_CONTEXT* temp;
+            FSP_FILE_SYSTEM_OPERATION_CONTEXT res = new FSP_FILE_SYSTEM_OPERATION_CONTEXT();
+
+            try
+            {
+                Console.WriteLine("\n" + "FspFileSystemGetOperationContext begin");
+                temp = Api.FspFileSystemGetOperationContext();
+                Console.WriteLine("FspFileSystemGetOperationContext end");
+                res.Request = temp->Request;
+                res.Response = temp->Response;
+                Console.WriteLine($"FspFileSystemGetOperationContext Hint is {res.Request.Hint}");
+
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("\n" + e.StackTrace);
+                throw;
+            }
+
+            return res;
         }
 
         static FileSystemHost()
